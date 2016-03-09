@@ -9,9 +9,12 @@ import java.util.StringTokenizer;
 public class Client {
     public static void main(String[] args) throws IOException {
         Socket controller = new Socket("127.0.0.1", 2333);
-//        Socket dataTransfer = new Socket("127.0.0.1", 20);
+        Socket dataTransfer;
+        int dataPort = 0;
         BufferedReader instReader = new BufferedReader(new InputStreamReader(controller.getInputStream()));
         PrintWriter instWriter = new PrintWriter(new OutputStreamWriter(controller.getOutputStream()));
+        BufferedReader dataReader;
+        PrintWriter dataWriter;
         String serverResponse = null;
         instWriter.println("USER root");
         instWriter.flush();
@@ -30,12 +33,25 @@ public class Client {
         instWriter.println("PASV");
         instWriter.flush();
         serverResponse = instReader.readLine();
+        try {
+            dataPort = Integer.parseInt(serverResponse);
+        } catch (NumberFormatException e) {
+            System.out.println("Wrong Response!");
+        }
         System.out.println(serverResponse);
-
+        dataTransfer = new Socket("127.0.0.1", dataPort);
+//        dataWriter = new PrintWriter(new OutputStreamWriter(dataTransfer.getOutputStream()));
+//        dataWriter.println("Hello!");
+//        dataWriter.flush();
+//        instWriter.println("LIST");
+//        instWriter.flush();
+//        serverResponse = instReader.readLine();
+//        System.out.println("\nCurrent Directory:\n" + serverResponse.replace('&', '\n'));
 
         instReader.close();
         instWriter.close();
         controller.close();
+        dataTransfer.close();
 
     }
     private static boolean responseAnalyser(String response) {
