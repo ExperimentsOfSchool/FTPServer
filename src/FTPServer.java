@@ -19,8 +19,9 @@ public class FTPServer {
     private static Socket transSocket = null;
     private static String instHeader = "";
     private static String instPara = "";
-    private static String strDir = "./";
+    private static String strDir = "./ftp";
     private static File currentDirectory = null;
+    private static File currentFile = null;
     private static int dataPort = 0;
 
     public static void main(String[] args) throws IOException, NullPointerException {
@@ -125,6 +126,60 @@ public class FTPServer {
                                 instWriter.flush();
                             }
                             break;
+                        case "RETR":
+                            if(!dataStatus) {
+                                instWriter.println("Operation Refused!");
+                                instWriter.flush();
+                                break;
+                            }
+                            if(currentDirectory.isDirectory()) {
+                                String fileName = instPara;
+                                File[] list = currentDirectory.listFiles();
+                                boolean hasFile = false;
+
+                                if(list != null) {
+                                    for(File file: list) {
+                                        if(file.getName().equals(fileName)) {
+                                            currentFile = file;
+                                            hasFile = true;
+                                            break;
+                                        }
+                                    }
+                                    if(!hasFile) {
+                                        instWriter.println("No such file.");
+                                        instWriter.flush();
+                                    } else {
+                                        if(currentFile.isDirectory()) {
+                                            instWriter.println("Is a Directory!");
+                                        } else {
+                                            instWriter.println("OK");
+                                            instWriter.flush();
+                                            DataOutputStream dout;
+                                            dout = new DataOutputStream(transSocket.getOutputStream());
+                                            FileInputStream fin = new FileInputStream(currentFile);
+                                            byte[] sendByte = new byte[1024];
+                                            int length;
+                                            dout.writeUTF(currentFile.getName());
+                                            while((length = fin.read(sendByte, 0, sendByte.length)) >= 0) {
+                                                dout.write(sendByte, 0, length);
+                                                dout.flush();
+                                            }
+                                            dout.close();
+                                            fin.close();
+                                            transSocket = transfer.accept();
+
+                                        }
+                                    }
+                                } else {
+                                    instWriter.println("System Error!");
+                                    instWriter.flush();
+                                }
+                                break;
+                            } else {
+                                instWriter.println("System Error!");
+                                instWriter.flush();
+                                break;
+                            }
                         case "QUIT":
                             closeStatus = true;
                             break;
@@ -141,6 +196,7 @@ public class FTPServer {
         }
     }
     private static void resetSocket() throws IOException, NullPointerException {
+        System.out.println("Closing...");
         contSocket.close();
         if(transSocket != null) {
             transSocket.close();
@@ -155,8 +211,9 @@ public class FTPServer {
         contSocket = null;
         instHeader = "";
         instPara = "";
-        strDir = "./";
+        strDir = "./ftp";
         currentDirectory = null;
+        currentFile = null;
         dataPort = 0;
 
     }

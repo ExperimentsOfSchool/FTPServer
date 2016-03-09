@@ -85,6 +85,37 @@ public class FTPClienet {
                             response = instReader.readLine();
                             System.out.println(response.replace('^', '\n'));
                             break;
+                        case "RETR":
+                            instWriter.println(inst);
+                            instWriter.flush();
+                            response = instReader.readLine();
+                            if(response.equals("OK")) {
+                                byte[] inputByte = new byte[1024];
+                                int length = 0;
+                                DataInputStream din;
+                                FileOutputStream fout = null;
+                                din = new DataInputStream(transfer.getInputStream());
+                                fout = new FileOutputStream(new File("./" + din.readUTF()));
+                                System.out.println("Receiving...");
+                                while(true) {
+                                    if(din != null) {
+                                        length = din.read(inputByte, 0, inputByte.length);
+                                    }
+                                    if(length == -1) {
+                                        break;
+                                    }
+                                    System.out.println(length);
+                                    fout.write(inputByte, 0, length);
+                                    fout.flush();
+                                }
+                                System.out.println("Complete!");
+                                fout.close();
+                                din.close();
+                                transfer = new Socket(serverAddress, dataPort);
+                            } else {
+                                System.out.println(response);
+                            }
+                            break;
                     }
                 }
             }
