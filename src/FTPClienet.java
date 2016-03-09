@@ -104,7 +104,7 @@ public class FTPClienet {
                                     if(length == -1) {
                                         break;
                                     }
-                                    System.out.println(length);
+//                                    System.out.println(length);
                                     fout.write(inputByte, 0, length);
                                     fout.flush();
                                 }
@@ -116,6 +116,44 @@ public class FTPClienet {
                                 System.out.println(response);
                             }
                             break;
+                        case "STOR":
+                            instWriter.println(inst);
+                            instWriter.flush();
+                            response = instReader.readLine();
+                            if(response.equals("OK")) {
+                                File file = new File("./" + instPara);
+                                if(file.exists() && !file.isDirectory()) {
+                                    instWriter.println("START");
+                                    instWriter.flush();
+                                    DataOutputStream dout;
+                                    dout = new DataOutputStream(transfer.getOutputStream());
+                                    FileInputStream fin = new FileInputStream(file);
+                                    byte[] sendByte = new byte[1024];
+                                    int length;
+                                    System.out.println("Sending...");
+                                    dout.writeUTF(file.getName());
+                                    while((length = fin.read(sendByte, 0, sendByte.length)) >= 0) {
+                                        dout.write(sendByte, 0, length);
+                                        dout.flush();
+                                    }
+                                    System.out.println("Complete!");
+                                    dout.close();
+                                    fin.close();
+                                    transfer = new Socket(serverAddress, dataPort);
+                                } else {
+                                    instWriter.println("ABORT");
+                                    instWriter.flush();
+                                    if(file.isDirectory()) {
+                                        System.out.println("Is a Directory!");
+                                    } else {
+                                        System.out.println("File Not Exist");
+                                    }
+                                }
+                            }
+
+                            break;
+                        default:
+                            System.out.println("Wrong Instruction!");
                     }
                 }
             }

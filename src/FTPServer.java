@@ -174,12 +174,47 @@ public class FTPServer {
                                     instWriter.println("System Error!");
                                     instWriter.flush();
                                 }
-                                break;
                             } else {
                                 instWriter.println("System Error!");
                                 instWriter.flush();
-                                break;
                             }
+                            break;
+                        case "STOR":
+                            if(dataStatus) {
+                                instWriter.println("OK");
+                                instWriter.flush();
+                                String response;
+                                if((response = instReader.readLine()).equals("START")) {
+                                    byte[] inputByte = new byte[1024];
+                                    int length = 0;
+                                    DataInputStream din;
+                                    FileOutputStream fout = null;
+                                    din = new DataInputStream(transSocket.getInputStream());
+                                    fout = new FileOutputStream(new File("./ftp/" + din.readUTF()));
+//                                System.out.println("Receiving...");
+                                    while(true) {
+
+                                        length = din.read(inputByte, 0, inputByte.length);
+
+                                        if(length == -1) {
+                                            break;
+                                        }
+//                                    System.out.println(length);
+                                        fout.write(inputByte, 0, length);
+                                        fout.flush();
+                                    }
+//                                System.out.println("Complete!");
+                                    fout.close();
+                                    din.close();
+                                    transSocket = transfer.accept();
+                                } else {
+                                    System.out.println(response);
+                                }
+                            } else {
+                                instWriter.println("Operation Refused!");
+                                instWriter.flush();
+                            }
+                            break;
                         case "QUIT":
                             closeStatus = true;
                             break;
