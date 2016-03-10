@@ -8,30 +8,30 @@ import java.util.StringTokenizer;
  *
  * Created by Lawrence on 3/9/16.
  */
-public class FTPServer {
-    private static boolean loginStatus = false;
-    private static boolean authStatus = false;
-    private static boolean dataStatus = false;
-    private static boolean closeStatus = false;
-    private static ServerSocket controller = null;
-    private static ServerSocket transfer = null;
-    private static Socket contSocket = null;
-    private static Socket transSocket = null;
-    private static String instHeader = "";
-    private static String instPara = "";
-    private static String strDir = "./ftp";
-    private static File currentDirectory = null;
-    private static File currentFile = null;
-    private static int dataPort = 0;
-
-    public static void main(String[] args) throws IOException, NullPointerException {
-        controller = new ServerSocket(2333);
+public class FTPServer extends Thread {
+    private boolean loginStatus = false;
+    private boolean authStatus = false;
+    private boolean dataStatus = false;
+    private boolean closeStatus = false;
+    private ServerSocket transfer = null;
+    private Socket contSocket = null;
+    private Socket transSocket = null;
+    private String instHeader = "";
+    private String instPara = "";
+    private String strDir = "./ftp";
+    private File currentDirectory = null;
+    private File currentFile = null;
+    private int dataPort = 0;
+    public FTPServer(Socket contSocket) {
+        this.contSocket = contSocket;
+    }
+    @Override
+    public void run() throws NullPointerException {
         BufferedReader instReader;
         PrintWriter instWriter;
         String clientInst;
-        while(true) {
+//        while(true) {
             try {
-                contSocket = controller.accept();
                 instReader = new BufferedReader(new InputStreamReader(contSocket.getInputStream()));
                 instWriter = new PrintWriter(new OutputStreamWriter(contSocket.getOutputStream()));
                 authStatus = false;
@@ -123,6 +123,44 @@ public class FTPServer {
                                 instWriter.flush();
                             } else {
                                 instWriter.println("System Error!");
+                                instWriter.flush();
+                            }
+                            break;
+                        case "CWD":
+                            if(!dataStatus) {
+                                instWriter.println("Operation Refused!");
+                                instWriter.flush();
+                                break;
+                            }
+                            StringTokenizer paths = new StringTokenizer(instPara, "/");
+                            String path = "";
+                            String tmpDir  = strDir;
+                            boolean error = false;
+                            while(paths.hasMoreTokens()) {
+                                path = paths.nextToken();
+                                if(path.equals("..")) {
+                                    if(strDir.equals("./ftp")) {
+                                        instWriter.println("Permission Denied!");
+                                        instWriter.flush();
+                                        error = true;
+                                        break;
+                                    } else {
+                                        strDir = strDir.substring(0, strDir.lastIndexOf("/"));
+//                                        System.out.println(strDir);
+                                    }
+                                } else if(!path.equals(".")) {
+                                    strDir += "/" + path;
+                                }
+                            }
+                            currentDirectory = new File(strDir);
+                            if(error) break;
+                            if(!currentDirectory.isDirectory()) {
+                                instWriter.println("Error: Is Not A Directory");
+                                instWriter.flush();
+                                strDir = tmpDir;
+                                currentDirectory = new File(strDir);
+                            } else {
+                                instWriter.println("OK");
                                 instWriter.flush();
                             }
                             break;
@@ -228,9 +266,9 @@ public class FTPServer {
             } catch(IOException e) {
                 e.printStackTrace();
             }
-        }
+//        }
     }
-    private static void resetSocket() throws IOException, NullPointerException {
+    private void resetSocket() throws IOException, NullPointerException {
         System.out.println("Closing...");
         contSocket.close();
         if(transSocket != null) {
@@ -250,6 +288,5 @@ public class FTPServer {
         currentDirectory = null;
         currentFile = null;
         dataPort = 0;
-
     }
 }

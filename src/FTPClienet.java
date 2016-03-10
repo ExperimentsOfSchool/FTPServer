@@ -85,6 +85,20 @@ public class FTPClienet {
                             response = instReader.readLine();
                             System.out.println(response.replace('^', '\n'));
                             break;
+                        case "CWD":
+                            instWriter.println(inst);
+                            instWriter.flush();
+                            response = instReader.readLine();
+                            if(response.equals("OK")) {
+                                instWriter.println("LIST");
+                                instWriter.flush();
+                                response = instReader.readLine();
+                                System.out.println(response.replace('^', '\n'));
+                                break;
+                            } else {
+                                System.out.println(response);
+                                break;
+                            }
                         case "RETR":
                             instWriter.println(inst);
                             instWriter.flush();
